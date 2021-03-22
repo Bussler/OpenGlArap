@@ -35,6 +35,8 @@ bool firstMouse = true;
 double lastXMPos;
 double lastYMPos;
 
+bool rotating = false;
+
 
 int main() {
 	
@@ -78,7 +80,7 @@ int main() {
 	ModelPointer = &parsedModel;
 
 	//use model view projection matrices to transform vertices from local to screen (NDC) space. NDC -> ViewPort is done automatically by opengl
-	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //Caution: here we interchange y and z axis for this model!
 	model = glm::translate(model, glm::vec3(0.0f, 0.0f, -4.0f));
 
 	//view = camera.getViewMatrix();
@@ -150,6 +152,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
 	camera.processMouseCamera(xoffset, yoffset);
 
+	if (rotating) { //rotateMesh
+		model = glm::rotate(model, glm::radians(1.0f)*xoffset, glm::vec3(0.0f, 0.0f, 1.0f));
+	}
+
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -162,7 +168,15 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		std::cout << "Cursor Position at (" << xpos << " : " << ypos <<")" << std::endl;
 		PickVertex(window, xpos, ypos);
 	}
+
+	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
+		rotating = true;
+	}
+	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE) {
+		rotating = false;
+	}
 }
+
 
 void PickVertex(GLFWwindow* window, double xMouse, double yMouse) {
 
