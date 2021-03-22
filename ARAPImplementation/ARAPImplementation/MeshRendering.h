@@ -10,6 +10,7 @@
 
 struct Vertex {
 	glm::vec3 Position;
+	glm::vec3 Color;
 	glm::vec3 Normal;
 	glm::vec2 TexCoords;
 };
@@ -70,6 +71,12 @@ public:
 		glBindVertexArray(0);
 	}
 
+	//update vertex pos in VBO
+	void UpdateMeshVertices() {
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), &vertices[0], GL_STATIC_DRAW); //copy vertex data into buffer for opengl to use
+	}
+
 private:
 	//data/ buffers for rendering with OpenGl
 	unsigned int VAO; //settings about reading vertex data from buffer and interpret it
@@ -93,11 +100,14 @@ private:
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0); //vertex attribute: vertex pos = location 0 in vertex shader
 		glEnableVertexAttribArray(0);
 
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal)); //normals
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Color)); //color
 		glEnableVertexAttribArray(1);
 
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords)); //tex coords
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal)); //normals
 		glEnableVertexAttribArray(2);
+
+		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords)); //tex coords
+		glEnableVertexAttribArray(3);
 
 		glBindVertexArray(0); //set back to default
 	}

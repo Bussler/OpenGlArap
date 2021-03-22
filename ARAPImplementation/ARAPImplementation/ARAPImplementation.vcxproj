@@ -147,6 +147,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\Basic.shader" />
+    <None Include="shaders\Color.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />

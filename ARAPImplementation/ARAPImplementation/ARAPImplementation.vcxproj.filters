@@ -32,6 +32,9 @@
     <None Include="shaders\Basic.shader">
       <Filter>res\shader</Filter>
     </None>
+    <None Include="shaders\Color.shader">
+      <Filter>res\shader</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h">

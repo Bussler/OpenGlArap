@@ -14,9 +14,17 @@
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void processInput(GLFWwindow *window);
+void PickVertex(GLFWwindow* window, double xMouse, double yMouse);
 
 Camera camera(glm::vec3(0, 0, 15), glm::vec3(0, 1, 0));
+Model* ModelPointer;
+
+//model view prrojection matrices
+glm::mat4 model = glm::mat4(1.0f);
+glm::mat4 view = glm::mat4(1.0f);
+glm::mat4 projection = glm::mat4(1.0f);
 
 //time vals for movement
 float deltaTime = 0.0f;	// time between current frame and last frame
@@ -47,8 +55,9 @@ int main() {
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); //resizing window resized the screen space: register window callback
 
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback); // register mouse callback funct
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
 	//use glad to load opengl func pointer
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -60,12 +69,27 @@ int main() {
 	glEnable(GL_DEPTH_TEST); //activates depth test
 
 	//parse and create shaders
-	ShaderParser::ShaderProgramSource sSource = ShaderParser::parseShader("shaders/Basic.shader"); //parse source code
+	ShaderParser::ShaderProgramSource sSource = ShaderParser::parseShader("shaders/Color.shader"); //parse source code
 	const char *vSource = sSource.vertexSource.c_str();
 	const char *fSource = sSource.fragmentSource.c_str();
 	unsigned int shaderProgramBasic = ShaderParser::createShader(vSource, fSource); //create vertex, fragment shaders and link together to program
 
 	Model parsedModel("data/cactus.obj"); //model to render
+	ModelPointer = &parsedModel;
+
+	//use model view projection matrices to transform vertices from local to screen (NDC) space. NDC -> ViewPort is done automatically by opengl
+	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::translate(model, glm::vec3(0.0f, 0.0f, -4.0f));
+
+	//view = camera.getViewMatrix();
+	view = glm::translate(view, glm::vec3(0, 0, -13));
+
+	projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);//perspective projection
+
+	//Debugging
+	//parsedModel.meshes[0].vertices[0].Color = glm::vec3(1.0f, 0.0f, 0.0f);	
+	//parsedModel.meshes[0].UpdateMeshVertices();
+
 
 	//render loop
 	while (!glfwWindowShouldClose(window))
@@ -82,15 +106,7 @@ int main() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f); //state
 		glClear(GL_COLOR_BUFFER_BIT); //state setting, clear buffer. Also available: GL_COLOR_BUFFER_BIT; GL_DEPTH_BUFFER_BIT; GL_STENCIL_BUFFER_BIT
 
-		//use model view projection matrices to transform vertices from local to screen (NDC) space. NDC -> ViewPort is done automatically by opengl
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -5.0f));
-
-		glm::mat4 view = camera.getViewMatrix();
-
-		glm::mat4 projection;
-		projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);//perspective projection
+		//for camera: update view matrix from camera
 
 		//rendering
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //activate better view of vertices of mesh
@@ -133,6 +149,50 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	lastYMPos = ypos;
 
 	camera.processMouseCamera(xoffset, yoffset);
+
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+	{
+		double xpos, ypos;
+		//getting cursor position
+		glfwGetCursorPos(window, &xpos, &ypos);
+		std::cout << "Cursor Position at (" << xpos << " : " << ypos <<")" << std::endl;
+		PickVertex(window, xpos, ypos);
+	}
+}
+
+void PickVertex(GLFWwindow* window, double xMouse, double yMouse) {
+
+	for (int i = 0; i < ModelPointer->meshes[0].vertices.size(); i++) {
+		glm::vec4 vertPos(ModelPointer->meshes[0].vertices[i].Position, 1);
+		glm::vec4 pos = projection * view * model * vertPos; //ModelViewProjection
+		pos.x /= pos.w; //Perspective division to NDC
+		pos.y /= pos.w;
+		pos.z /= pos.w;
+
+		int width, height;
+		glfwGetWindowSize(window, &width, &height);
+
+		float X = (pos.x + 1.0f) * width * 0.5; //Get ViewPort coords
+		float Y = (1.0f - pos.y) * height * 0.5;
+		float Z = 0.1f + pos.z * (100.0f - 0.1f);
+
+		float radiusX = 1.5f;
+		float radiusY = 1.5f;
+
+		if (abs(X - xMouse) < radiusX && abs(Y - yMouse) < radiusY) {//found click
+			ModelPointer->meshes[0].vertices[i].Color = glm::vec3(1.0f, 0.0f, 0.0f);
+
+			ModelPointer->meshes[0].UpdateMeshVertices();
+			std::cout << "Vertex Pos NDC: " << pos.x << " : " << pos.y << " : " << pos.z << std::endl;
+			std::cout << "Vertex Pos SCREEN: " << X << " : " << Y << " : " << Z << std::endl;
+			break;
+		}
+
+	}
 
 }
 

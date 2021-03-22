@@ -81,6 +81,16 @@ private:
 			pos.z = mesh->mVertices[i].z;
 			vertex.Position = pos;
 
+			if (mesh->HasVertexColors(0)) {
+				glm::vec3 color;
+				color.x = mesh->mColors[0][i].r;
+				color.y = mesh->mColors[0][i].g;
+				color.z = mesh->mColors[0][i].b;
+				vertex.Color = color;
+			}
+			else
+				vertex.Color = glm::vec3(0.0f, 71.8f, 92.2f); //cyan
+
 			if (mesh->HasNormals()) {
 				glm::vec3 normal;
 				normal.x = mesh->mNormals[i].x;
