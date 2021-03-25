@@ -49,5 +49,8 @@
     <ClInclude Include="ShaderParser.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="VertexDragging.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

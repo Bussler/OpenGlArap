@@ -154,6 +154,7 @@
     <ClInclude Include="MeshLoader.h" />
     <ClInclude Include="MeshRendering.h" />
     <ClInclude Include="ShaderParser.h" />
+    <ClInclude Include="VertexDragging.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
