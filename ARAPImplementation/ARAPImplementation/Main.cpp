@@ -11,15 +11,23 @@
 #include <glm\gtc\matrix_transform.hpp>
 #include <glm\gtc\type_ptr.hpp>
 
+struct DragVertexData {
+	float X; //x, y coords in screen space
+	float Y;
+	float NDCZ; //ndc depth for back projection
+};
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void processInput(GLFWwindow *window);
 void PickVertex(GLFWwindow* window, double xMouse, double yMouse);
+void dragVertex(GLFWwindow* window, float xOffset, float yOffset);
 
 Camera camera(glm::vec3(0, 0, 15), glm::vec3(0, 1, 0));
 Model* ModelPointer;
+std::vector<int> selectedConstraints;
+std::vector<DragVertexData> selectedConstraintsData;
 
 //model view prrojection matrices
 glm::mat4 model = glm::mat4(1.0f);
@@ -36,6 +44,7 @@ double lastXMPos;
 double lastYMPos;
 
 bool rotating = false;
+bool dragging = false;
 
 
 int main() {
@@ -109,6 +118,7 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT); //state setting, clear buffer. Also available: GL_COLOR_BUFFER_BIT; GL_DEPTH_BUFFER_BIT; GL_STENCIL_BUFFER_BIT
 
 		//for camera: update view matrix from camera
+		//view = camera.getViewMatrix();
 
 		//rendering
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //activate better view of vertices of mesh
@@ -150,17 +160,23 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	lastXMPos = xpos;
 	lastYMPos = ypos;
 
-	camera.processMouseCamera(xoffset, yoffset);
 
 	if (rotating) { //rotateMesh
 		model = glm::rotate(model, glm::radians(1.0f)*xoffset, glm::vec3(0.0f, 0.0f, 1.0f));
+	}
+	else {
+		camera.processMouseCamera(xoffset, yoffset);
+	}
+
+	if (dragging) { //drag
+		dragVertex(window, xoffset, yoffset);
 	}
 
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
 	{
 		double xpos, ypos;
 		//getting cursor position
@@ -169,7 +185,14 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		PickVertex(window, xpos, ypos);
 	}
 
-	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) { //dragging
+		dragging = true;
+	}
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+		dragging = false;
+	}
+
+	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) { //rotating mesh
 		rotating = true;
 	}
 	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE) {
@@ -194,17 +217,61 @@ void PickVertex(GLFWwindow* window, double xMouse, double yMouse) {
 		float Y = (1.0f - pos.y) * height * 0.5;
 		float Z = 0.1f + pos.z * (100.0f - 0.1f);
 
-		float radiusX = 1.5f;
-		float radiusY = 1.5f;
+		float radiusX = 5.0f;
+		float radiusY = 5.0f;
 
 		if (abs(X - xMouse) < radiusX && abs(Y - yMouse) < radiusY) {//found click
-			ModelPointer->meshes[0].vertices[i].Color = glm::vec3(1.0f, 0.0f, 0.0f);
+			auto searchPos = std::find(selectedConstraints.begin(), selectedConstraints.end(), i);
+			int index = std::distance(selectedConstraints.begin(), searchPos);
+
+			if (searchPos != selectedConstraints.end()) { //constraint already selected
+				ModelPointer->meshes[0].vertices[i].Color = glm::vec3(0.0f, 71.8f, 92.2f); //orig color
+				selectedConstraints.erase(searchPos);
+				selectedConstraintsData.erase(selectedConstraintsData.begin()+index);
+			}
+			else { //select
+				ModelPointer->meshes[0].vertices[i].Color = glm::vec3(1.0f, 0.0f, 0.0f);
+				selectedConstraints.push_back(i);
+				selectedConstraintsData.push_back(DragVertexData{ X, Y, pos.z });
+			}
 
 			ModelPointer->meshes[0].UpdateMeshVertices();
+			/*std::cout << "Vertex Pos orig: " << vertPos.x << " : " << vertPos.y << " : " << vertPos.z << std::endl;
 			std::cout << "Vertex Pos NDC: " << pos.x << " : " << pos.y << " : " << pos.z << std::endl;
-			std::cout << "Vertex Pos SCREEN: " << X << " : " << Y << " : " << Z << std::endl;
-			break;
+			std::cout << "Vertex Pos SCREEN: " << X << " : " << Y << " : " << Z << std::endl;*/
+			
+			//break; //get all vertices on the edge, not only the first one! -> vertex counts not for multiple faces!!!
 		}
+
+	}
+
+}
+
+void dragVertex(GLFWwindow* window, float xOffset, float yOffset) { //drag all safed constraints
+
+	for (int i = 0; i < selectedConstraints.size();i++) { //loop through all selected constraints and apply the offset to them
+		int vertexIndex = selectedConstraints.at(i);
+		DragVertexData vData = selectedConstraintsData.at(i);
+
+		vData.X += xOffset; //apply mouse input
+		vData.Y -= yOffset;
+		selectedConstraintsData.at(i) = vData;//saving
+
+		//project back into model space to save into vertex data
+		int width, height;
+		glfwGetWindowSize(window, &width, &height);
+
+		float ndcX = (vData.X *2) / width -1; //get ndc
+		float ndcY = ((vData.Y * 2) / height -1) *(-1);
+
+
+		glm::mat4 inverseModelViewProj = glm::inverse(projection * view * model); //inverse projection
+		glm::vec4 reconstructedOrig = inverseModelViewProj * glm::vec4(ndcX, ndcY, selectedConstraintsData.at(i).NDCZ, 1);
+		reconstructedOrig /= reconstructedOrig.w;
+
+		//update the model
+		ModelPointer->meshes[0].vertices[vertexIndex].Position = glm::vec3(reconstructedOrig.x, reconstructedOrig.y, reconstructedOrig.z);
+		ModelPointer->meshes[0].UpdateMeshVertices();
 
 	}
 
