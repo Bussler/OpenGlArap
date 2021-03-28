@@ -14,27 +14,19 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="res">
-      <UniqueIdentifier>{64373e11-c2de-4ac0-b0c3-0b62b272cdd6}</UniqueIdentifier>
+      <UniqueIdentifier>{ab27b954-0bd1-45a4-a564-fbc8cd7ec096}</UniqueIdentifier>
     </Filter>
     <Filter Include="res\shader">
-      <UniqueIdentifier>{9370f529-e6ae-4452-8986-64f2baf9d1dd}</UniqueIdentifier>
+      <UniqueIdentifier>{52458bc5-e8ad-4406-b134-0fbd2686704e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Main.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="glad.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders\Basic.shader">
-      <Filter>res\shader</Filter>
-    </None>
-    <None Include="shaders\Color.shader">
-      <Filter>res\shader</Filter>
-    </None>
+    <ClCompile Include="Main.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h">
@@ -52,5 +44,13 @@
     <ClInclude Include="VertexDragging.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\Basic.shader">
+      <Filter>res\shader</Filter>
+    </None>
+    <None Include="shaders\Color.shader">
+      <Filter>res\shader</Filter>
+    </None>
   </ItemGroup>
 </Project>
