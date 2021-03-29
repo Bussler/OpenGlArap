@@ -71,7 +71,7 @@ public:
 		glBindVertexArray(0);
 	}
 
-	//update vertex pos in VBO
+	//update vertex data in VBO
 	void UpdateMeshVertices() {
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), &vertices[0], GL_STATIC_DRAW); //copy vertex data into buffer for opengl to use

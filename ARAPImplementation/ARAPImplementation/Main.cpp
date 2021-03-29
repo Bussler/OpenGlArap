@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES
 #include <glad\glad.h>
 #include <GLFW\glfw3.h>
 #include <iostream>
@@ -6,6 +7,10 @@
 #include "Camera.h"
 #include "MeshLoader.h"
 #include "VertexDragging.h"
+#include "ARAPSolver.h"
+#include <memory>
+#include <OpenMesh/Core/IO/MeshIO.hh>
+#include "OpenMeshType.h"
 
 //for transformations
 #include <glm\glm.hpp>
@@ -18,6 +23,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 void processInput(GLFWwindow *window);
 
 Camera camera(glm::vec3(0, 0, 15), glm::vec3(0, 1, 0));
+static std::unique_ptr<ARAP::ARAPSolver> arapSolver; //ARAP interface to implement functionality
 
 //model view prrojection matrices
 glm::mat4 model = glm::mat4(1.0f);
@@ -75,8 +81,18 @@ int main() {
 	const char *fSource = sSource.fragmentSource.c_str();
 	unsigned int shaderProgramBasic = ShaderParser::createShader(vSource, fSource); //create vertex, fragment shaders and link together to program
 
-	Model parsedModel("data/cactus.obj"); //model to render
-	vertexDragging::setModel(&parsedModel); //link model for dragging of vertices
+	//Model parsedModel("data/cactus.obj"); //model to render
+	//vertexDragging::setModel(&parsedModel); //link model for dragging of vertices
+	TriMesh mesh;
+	if (!OpenMesh::IO::read_mesh(mesh, "data/cactus.obj"))
+	{
+		std::cerr << "read mesh error\n";
+		exit(1);
+	}
+	Model parsedModel(mesh);
+	vertexDragging::setModel(&parsedModel);
+
+	arapSolver = std::make_unique<ARAP::ARAPSolver>(&parsedModel);//construct arap interface
 
 	//use model view projection matrices to transform vertices from local to screen (NDC) space. NDC -> ViewPort is done automatically by opengl
 	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //Caution: here we interchange y and z axis for this model!
@@ -109,6 +125,8 @@ int main() {
 
 		//for camera: update view matrix from camera
 		//view = camera.getViewMatrix();
+
+		//TODO ARAP
 
 		//rendering
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //activate better view of vertices of mesh

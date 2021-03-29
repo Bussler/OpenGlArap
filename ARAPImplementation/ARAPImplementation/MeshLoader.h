@@ -4,6 +4,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <iostream>
+#include "OpenMeshType.h"
 
 
 //load a model with assimp lib and translate it into multiple meshes
@@ -15,6 +16,10 @@ public:
 	Model(std::string const &path)
 	{
 		loadModel(path);
+	}
+
+	Model(TriMesh& mesh) {
+		processOpenMesh(mesh);
 	}
 
 	void Draw(unsigned int shader) {
@@ -33,6 +38,54 @@ public:
 private:
 	// model data
 	std::string directory; //dir to hold the model data
+
+	//load mesh from OpenMesh data Type
+	void processOpenMesh(TriMesh& mesh) {
+
+		//OpenMesh::VertexHandle handleO(1);
+		//std::cout << " Point 0: " << mesh.point(handleO) << std::endl;
+
+		/*OpenMesh::FaceHandle handle(0);
+		for (auto fv_it = mesh.cfv_ccwiter(handle); fv_it.is_valid(); ++fv_it) {
+			const uint32_t current = fv_it->idx();
+			OpenMesh::VertexHandle handle(current);
+			std::cout << "Point: " << mesh.point(handle) << std::endl;
+		}*/
+
+		std::vector<Vertex> vertices;
+		std::vector<unsigned int> indices;
+		std::vector<Texture> textures;
+
+		for (TriMesh::VertexIter v_it = mesh.vertices_begin(); v_it != mesh.vertices_end(); ++v_it) {
+			
+			Vertex vertex;
+			const uint32_t current = v_it->idx();
+			OpenMesh::VertexHandle handle(current);
+
+			// process vertex positions, normals and texture coordinates
+			glm::vec3 pos;
+			pos.x = mesh.point(handle)[0];
+			pos.y = mesh.point(handle)[1];
+			pos.z = mesh.point(handle)[2];
+			vertex.Position = pos;
+
+			vertex.Color = glm::vec3(0.0f, 71.8f, 92.2f); //cyan
+
+			vertices.push_back(vertex);
+		}
+
+		//process indices
+		for (auto f_it = mesh.faces_sbegin(); f_it != mesh.faces_end(); ++f_it) {
+
+			for (auto fv_it = mesh.cfv_ccwiter(*f_it); fv_it.is_valid(); ++fv_it) {
+				indices.push_back(fv_it->idx());
+			}
+
+		}
+
+
+		meshes.push_back(Mesh(vertices, indices, textures));
+	}
 
 	void loadModel(std::string const &path) {
 		//loading

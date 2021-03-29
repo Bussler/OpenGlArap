@@ -13,7 +13,7 @@ namespace vertexDragging {
 	bool changedDragVertexData = false;
 
 	//data for our vertices
-	Model* ModelPointer;
+	Model* ModelPointer; //get static Data in main.cpp
 	std::vector<int> selectedConstraints;
 	std::vector<DragVertexData> selectedConstraintsData;
 
