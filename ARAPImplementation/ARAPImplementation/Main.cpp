@@ -52,7 +52,7 @@ int main() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	//create window
-	GLFWwindow* window = glfwCreateWindow(800, 600, "ARAP", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(1600, 900, "ARAP", NULL, NULL); //800 600
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -90,9 +90,9 @@ int main() {
 		exit(1);
 	}
 	Model parsedModel(mesh);
-	vertexDragging::setModel(&parsedModel);
+	vertexDragging::setModel(&parsedModel); //link model for dragging of vertices
 
-	arapSolver = std::make_unique<ARAP::ARAPSolver>(&parsedModel);//construct arap interface
+	arapSolver = std::make_unique<ARAP::ARAPSolver>(&parsedModel, &mesh);//construct arap interface
 
 	//use model view projection matrices to transform vertices from local to screen (NDC) space. NDC -> ViewPort is done automatically by opengl
 	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //Caution: here we interchange y and z axis for this model!
@@ -101,7 +101,7 @@ int main() {
 	//view = camera.getViewMatrix();
 	view = glm::translate(view, glm::vec3(0, 0, -13));
 
-	projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);//perspective projection
+	projection = glm::perspective(glm::radians(45.0f), 1600.0f / 900.0f, 0.1f, 100.0f);//perspective projection
 
 	//Debugging
 	//parsedModel.meshes[0].vertices[0].Color = glm::vec3(1.0f, 0.0f, 0.0f);	
