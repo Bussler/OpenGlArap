@@ -1,5 +1,6 @@
 #pragma once
 #include "MeshLoader.h"
+//#include "VertexDragging.h"
 #include <iostream>
 #include <vector>
 #include <Eigen/Dense>
@@ -28,7 +29,7 @@ namespace ARAP {
 		~ARAPSolver();
 		
 		//interface to give constraints and movement in the ModelPointer and to calculate new pos of the Mesh into the ModelPointer
-		void ArapStep();
+		void ArapStep(int iterations, std::vector<std::pair<int, Vector3f>>& constraints);
 
 	private:
 		SystemMatrix* sysMatrix;

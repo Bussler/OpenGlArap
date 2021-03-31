@@ -1,3 +1,4 @@
+#pragma once
 #define _USE_MATH_DEFINES
 #include <glad\glad.h>
 #include <GLFW\glfw3.h>
@@ -103,10 +104,6 @@ int main() {
 
 	projection = glm::perspective(glm::radians(45.0f), 1600.0f / 900.0f, 0.1f, 100.0f);//perspective projection
 
-	//Debugging
-	//parsedModel.meshes[0].vertices[0].Color = glm::vec3(1.0f, 0.0f, 0.0f);	
-	//parsedModel.meshes[0].UpdateMeshVertices();
-
 
 	//render loop
 	while (!glfwWindowShouldClose(window))
@@ -126,7 +123,8 @@ int main() {
 		//for camera: update view matrix from camera
 		//view = camera.getViewMatrix();
 
-		//TODO ARAP
+		//ARAP
+
 
 		//rendering
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //activate better view of vertices of mesh

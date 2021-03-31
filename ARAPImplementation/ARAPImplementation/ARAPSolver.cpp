@@ -1,3 +1,4 @@
+#pragma once
 #include "ARAPSolver.h"
 
 
@@ -7,17 +8,34 @@ ARAP::ARAPSolver::ARAPSolver(Model* parsedModel, TriMesh* origMesh)
 	ModelPointer = parsedModel;
 	this->OrigMesh = origMesh;
 
-	computeFanWeights(fanWeights);
+	computeFanWeights(fanWeights); //construct weights
 
-	sysMatrix = computeSystemMatrix();
-
-	std::vector<Matrix3f> rots;
-	solveRotations(rots);
+	sysMatrix = computeSystemMatrix(); //construct initial system Matrix
 }
 
 
 ARAP::ARAPSolver::~ARAPSolver()
 {
+}
+
+//TODO get constraints
+void ARAP::ARAPSolver::ArapStep(int iterations, std::vector<std::pair<int, Vector3f>>& constraints)
+{
+
+	/*if (vertexDragging::changedConstraints)
+		setSystemMatrixConstraints(constraints);
+	vertexDragging::changedConstraints = false;*/
+
+	std::vector<Matrix3f> rotations;
+	std::vector<Vector3f> pos;
+
+	for (int ii = 0; ii < iterations; ii++) {
+
+		solveRotations(rotations);
+		solvePositions(constraints, rotations, pos);
+	}
+	//TODO update pos of vertices in ModelPointer
+
 }
 
 Vector3f ARAP::ARAPSolver::vector3f_from_point(const TriMesh::Point& p) {

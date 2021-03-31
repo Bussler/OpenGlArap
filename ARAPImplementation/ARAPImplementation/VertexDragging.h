@@ -11,11 +11,16 @@ namespace vertexDragging {
 	};
 
 	bool changedDragVertexData = false;
+	bool changedConstraints = false;
 
 	//data for our vertices
 	Model* ModelPointer; //get static Data in main.cpp
-	std::vector<int> selectedConstraints;
+	std::vector<int> selectedConstraints; //Movable
 	std::vector<DragVertexData> selectedConstraintsData;
+
+	glm::vec3 dynamicConstraintColor(1.0f, 0.0f, 0.0f);
+	glm::vec3 staticConstraintColor(17.0f, 100.0f, 56.0f);
+	glm::vec3 origColor(0.0f, 71.8f, 92.2f);
 
 	void setModel(Model* model) {
 		ModelPointer = model;
@@ -45,18 +50,29 @@ namespace vertexDragging {
 				auto searchPos = std::find(selectedConstraints.begin(), selectedConstraints.end(), i);
 				int index = std::distance(selectedConstraints.begin(), searchPos);
 
-				if (searchPos != selectedConstraints.end()) { //constraint already selected
-					ModelPointer->meshes[0].vertices[i].Color = glm::vec3(0.0f, 71.8f, 92.2f); //orig color
-					selectedConstraints.erase(searchPos);
-					selectedConstraintsData.erase(selectedConstraintsData.begin() + index);
+				if (searchPos != selectedConstraints.end()) { //constraint already selected -> put static
+					glm::vec3 curColor = ModelPointer->meshes[0].vertices[i].Color;
+					if (curColor == dynamicConstraintColor) { //dynamic
+						ModelPointer->meshes[0].vertices[i].Color = staticConstraintColor; //static color
+					}
+					else { //static 
+						ModelPointer->meshes[0].vertices[i].Color = origColor; //orig color
+
+						selectedConstraints.erase(searchPos);
+						selectedConstraintsData.erase(selectedConstraintsData.begin() + index);
+						changedConstraints = true;
+					}
+					
 				}
 				else { //select
-					ModelPointer->meshes[0].vertices[i].Color = glm::vec3(1.0f, 0.0f, 0.0f);
+					ModelPointer->meshes[0].vertices[i].Color = dynamicConstraintColor;
 					selectedConstraints.push_back(i);
 					selectedConstraintsData.push_back(DragVertexData{ X, Y, pos.z }); //TODO how to update x, y, z when rotating the screen?
+					changedConstraints = true;
 				}
 
 				ModelPointer->meshes[0].UpdateMeshVertices();
+
 				/*std::cout << "Vertex Pos orig: " << vertPos.x << " : " << vertPos.y << " : " << vertPos.z << std::endl;
 				std::cout << "Vertex Pos NDC: " << pos.x << " : " << pos.y << " : " << pos.z << std::endl;
 				std::cout << "Vertex Pos SCREEN: " << X << " : " << Y << " : " << Z << std::endl;*/
@@ -92,6 +108,7 @@ namespace vertexDragging {
 				
 				selectedConstraintsData.at(i) = DragVertexData{ X, Y, pos.z };
 			}
+			changedDragVertexData = false;
 		}
 	}
 
@@ -103,6 +120,9 @@ namespace vertexDragging {
 		for (int i = 0; i < selectedConstraints.size();i++) { //loop through all selected constraints and apply the offset to them
 			int vertexIndex = selectedConstraints.at(i);
 			DragVertexData vData = selectedConstraintsData.at(i);
+
+			if (ModelPointer->meshes[0].vertices[vertexIndex].Color == staticConstraintColor) //skip static constraints
+				break;
 
 			vData.X += xOffset; //apply mouse input
 			vData.Y -= yOffset;
