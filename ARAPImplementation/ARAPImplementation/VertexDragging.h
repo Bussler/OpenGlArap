@@ -1,5 +1,6 @@
 #pragma once
 #include "MeshLoader.h"
+#include "ARAPSolver.h"
 
 namespace vertexDragging {
 
@@ -11,10 +12,10 @@ namespace vertexDragging {
 	};
 
 	bool changedDragVertexData = false;
-	bool changedConstraints = false;
 
 	//data for our vertices
 	Model* ModelPointer; //get static Data in main.cpp
+	ARAP::ARAPSolver* ArapSolverPointer;
 	std::vector<int> selectedConstraints; //Movable
 	std::vector<DragVertexData> selectedConstraintsData;
 
@@ -24,6 +25,10 @@ namespace vertexDragging {
 
 	void setModel(Model* model) {
 		ModelPointer = model;
+	}
+
+	void setARAP(ARAP::ARAPSolver* solver) {
+		ArapSolverPointer = solver;
 	}
 
 	//select vertices in the model that we want to drag
@@ -60,7 +65,7 @@ namespace vertexDragging {
 
 						selectedConstraints.erase(searchPos);
 						selectedConstraintsData.erase(selectedConstraintsData.begin() + index);
-						changedConstraints = true;
+						ArapSolverPointer->untoggleConstraint(index);
 					}
 					
 				}
@@ -68,7 +73,7 @@ namespace vertexDragging {
 					ModelPointer->meshes[0].vertices[i].Color = dynamicConstraintColor;
 					selectedConstraints.push_back(i);
 					selectedConstraintsData.push_back(DragVertexData{ X, Y, pos.z }); //TODO how to update x, y, z when rotating the screen?
-					changedConstraints = true;
+					ArapSolverPointer->toggleConstraint(i);
 				}
 
 				ModelPointer->meshes[0].UpdateMeshVertices();
@@ -122,7 +127,7 @@ namespace vertexDragging {
 			DragVertexData vData = selectedConstraintsData.at(i);
 
 			if (ModelPointer->meshes[0].vertices[vertexIndex].Color == staticConstraintColor) //skip static constraints
-				break;
+				continue;
 
 			vData.X += xOffset; //apply mouse input
 			vData.Y -= yOffset;

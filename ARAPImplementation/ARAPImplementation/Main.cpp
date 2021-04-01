@@ -94,6 +94,10 @@ int main() {
 	vertexDragging::setModel(&parsedModel); //link model for dragging of vertices
 
 	arapSolver = std::make_unique<ARAP::ARAPSolver>(&parsedModel, &mesh);//construct arap interface
+	vertexDragging::setARAP(arapSolver.get());
+	
+	//TODO better solution
+	arapSolver->toggleConstraint(0);
 
 	//use model view projection matrices to transform vertices from local to screen (NDC) space. NDC -> ViewPort is done automatically by opengl
 	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //Caution: here we interchange y and z axis for this model!
@@ -124,7 +128,7 @@ int main() {
 		//view = camera.getViewMatrix();
 
 		//ARAP
-
+		arapSolver->ArapStep(3);
 
 		//rendering
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //activate better view of vertices of mesh

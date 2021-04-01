@@ -6,6 +6,7 @@
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
 #include <Eigen/SparseCholesky>
+#include <iostream>
 
 using namespace Eigen;
 
@@ -21,7 +22,7 @@ namespace ARAP {
 	{
 	public:
 		//Data
-		Model * ModelPointer;
+		Model * ModelDataPointer;
 		TriMesh* OrigMesh;
 
 		//constructor
@@ -29,12 +30,16 @@ namespace ARAP {
 		~ARAPSolver();
 		
 		//interface to give constraints and movement in the ModelPointer and to calculate new pos of the Mesh into the ModelPointer
-		void ArapStep(int iterations, std::vector<std::pair<int, Vector3f>>& constraints);
+		void ArapStep(int iterations);
+
+		void toggleConstraint(int idx);
+		void untoggleConstraint(int i);
 
 	private:
-		SystemMatrix* sysMatrix;
+		SystemMatrix sysMatrix;
 
-		//TODO constraint list
+		std::vector<std::pair<int, Vector3f>> constraints; //constraint list
+		bool changedConstraints = false;
 		//TODO calculate weights of mesh
 		std::vector<float> fanWeights;
 
@@ -43,7 +48,7 @@ namespace ARAP {
 		void solveRotations(std::vector<Matrix3f>& solvedRotations); //orig points in OrigMesh, new deformed points in ModelPointer
 		Eigen::Matrix3f procrustes(const std::vector<Vector3f>& sourcePoints, const std::vector<Vector3f>& targetPoints, const std::vector<float>& weights);
 		
-		SystemMatrix* computeSystemMatrix();
+		void computeSystemMatrix(SystemMatrix& mat);
 		void setSystemMatrixConstraints(const std::vector<std::pair<int, Vector3f>>& constraints);
 		void solvePositions(const std::vector<std::pair<int, Vector3f>>& constraints, const std::vector<Matrix3f>& rotations, std::vector<Vector3f>& solvedPos);
 

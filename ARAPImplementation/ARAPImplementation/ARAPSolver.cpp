@@ -5,12 +5,13 @@
 
 ARAP::ARAPSolver::ARAPSolver(Model* parsedModel, TriMesh* origMesh)
 {
-	ModelPointer = parsedModel;
+	ModelDataPointer = parsedModel;
 	this->OrigMesh = origMesh;
 
 	computeFanWeights(fanWeights); //construct weights
 
-	sysMatrix = computeSystemMatrix(); //construct initial system Matrix
+	computeSystemMatrix(sysMatrix); //construct initial system Matrix
+
 }
 
 
@@ -19,12 +20,11 @@ ARAP::ARAPSolver::~ARAPSolver()
 }
 
 //TODO get constraints
-void ARAP::ARAPSolver::ArapStep(int iterations, std::vector<std::pair<int, Vector3f>>& constraints)
+void ARAP::ARAPSolver::ArapStep(int iterations)
 {
-
-	/*if (vertexDragging::changedConstraints)
+	if (changedConstraints)
 		setSystemMatrixConstraints(constraints);
-	vertexDragging::changedConstraints = false;*/
+	changedConstraints = false;
 
 	std::vector<Matrix3f> rotations;
 	std::vector<Vector3f> pos;
@@ -34,8 +34,29 @@ void ARAP::ARAPSolver::ArapStep(int iterations, std::vector<std::pair<int, Vecto
 		solveRotations(rotations);
 		solvePositions(constraints, rotations, pos);
 	}
+	
 	//TODO update pos of vertices in ModelPointer
+	for (int i = 0;i < pos.size();i++) {
+		Vector3f curPos = pos.at(i);
+		ModelDataPointer->meshes[0].vertices[i].Position = glm::vec3(curPos.x(), curPos.y(), curPos.z());
+	}
+	ModelDataPointer->meshes[0].UpdateMeshVertices();
 
+}
+
+void ARAP::ARAPSolver::toggleConstraint(int idx)
+{
+	glm::vec3 vertPos(ModelDataPointer->meshes[0].vertices[idx].Position);
+	std::pair<int, Vector3f> constraint(idx, Vector3f(vertPos.x, vertPos.y, vertPos.z));
+	constraints.push_back(constraint);
+
+	changedConstraints = true;
+}
+
+void ARAP::ARAPSolver::untoggleConstraint(int i)
+{
+	constraints.erase(constraints.begin() + i);
+	changedConstraints = true;
 }
 
 Vector3f ARAP::ARAPSolver::vector3f_from_point(const TriMesh::Point& p) {
@@ -61,7 +82,7 @@ void ARAP::ARAPSolver::solveRotations(std::vector<Matrix3f>& solvedRotations)
 
 		//Better way to get from glm to eigen?
 		const Vector3f center = vector3f_from_point(OrigMesh->point(*v_it));
-		glm::vec3 deformCenterVec = ModelPointer->meshes[0].vertices[v_it->idx()].Position;
+		glm::vec3 deformCenterVec = ModelDataPointer->meshes[0].vertices[v_it->idx()].Position;
 		const Vector3f center_deformed = Vector3f(deformCenterVec.x, deformCenterVec.y, deformCenterVec.z);
 		
 		// loop through fan
@@ -72,7 +93,7 @@ void ARAP::ARAPSolver::solveRotations(std::vector<Matrix3f>& solvedRotations)
 			const OpenMesh::VertexHandle h(vv_it->idx());
 			sourcePointsFan.push_back(vector3f_from_point(OrigMesh->point(h)) - center);
 
-			glm::vec3 deformedGlm = ModelPointer->meshes[0].vertices[h.idx()].Position;
+			glm::vec3 deformedGlm = ModelDataPointer->meshes[0].vertices[h.idx()].Position;
 			const Vector3f deformedEigen = Vector3f(deformCenterVec.x, deformCenterVec.y, deformCenterVec.z);
 			deformedPointsFan.push_back(deformedEigen - center_deformed);
 		}
@@ -103,7 +124,7 @@ Eigen::Matrix3f ARAP::ARAPSolver::procrustes(const std::vector<Eigen::Vector3f>&
 	return rotation;
 }
 
-ARAP::SystemMatrix * ARAP::ARAPSolver::computeSystemMatrix()
+void ARAP::ARAPSolver::computeSystemMatrix(ARAP::SystemMatrix& mat)
 {
 	SystemMatrix ret{};
 
@@ -126,15 +147,13 @@ ARAP::SystemMatrix * ARAP::ARAPSolver::computeSystemMatrix()
 	}
 	L.makeCompressed();
 
-	ret.L_orig = L;
-
-	return &ret;
+	mat.L_orig = L;
 }
 
 void ARAP::ARAPSolver::setSystemMatrixConstraints(const std::vector<std::pair<int, Vector3f>>& constraints)
 {
-	sysMatrix->L = sysMatrix->L_orig;
-	auto& L = sysMatrix->L;
+	sysMatrix.L = sysMatrix.L_orig;
+	auto& L = sysMatrix.L;
 	for (const auto& con : constraints) {
 		const auto idx = con.first;
 		for (int i = 0; i < L.cols(); i++)
@@ -143,13 +162,13 @@ void ARAP::ARAPSolver::setSystemMatrixConstraints(const std::vector<std::pair<in
 			L.coeffRef(i, idx) = 0;
 		L.coeffRef(idx, idx) = 1;
 	}
-	sysMatrix->solver.compute(L);
+	sysMatrix.solver.compute(L);
 }
 
 void ARAP::ARAPSolver::solvePositions(const std::vector<std::pair<int, Vector3f>>& constraints, const std::vector<Matrix3f>& rotations, std::vector<Vector3f>& solvedPos)
 {
-	auto& L = sysMatrix->L;
-	auto& L_orig = sysMatrix->L_orig;
+	auto& L = sysMatrix.L;
+	auto& L_orig = sysMatrix.L_orig;
 	const size_t vertexCount = OrigMesh->n_vertices();
 
 	Matrix<float, Dynamic, 3> b(vertexCount, 3);
@@ -189,7 +208,7 @@ void ARAP::ARAPSolver::solvePositions(const std::vector<std::pair<int, Vector3f>
 
 	//solve
 	Matrix<float, Dynamic, 3> x;
-	x = sysMatrix->solver.solve(b);
+	x = sysMatrix.solver.solve(b);
 	solvedPos.clear();
 	for (size_t i = 0; i < vertexCount; i++)
 		solvedPos.push_back(x.row(i));
