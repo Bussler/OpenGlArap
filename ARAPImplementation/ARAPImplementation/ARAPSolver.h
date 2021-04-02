@@ -45,7 +45,7 @@ namespace ARAP {
 
 		Vector3f vector3f_from_point(const TriMesh::Point& p);
 		void computeFanWeights(std::vector<float>& fanWeights);
-		void solveRotations(std::vector<Matrix3f>& solvedRotations); //orig points in OrigMesh, new deformed points in ModelPointer
+		void solveRotations(std::vector<Matrix3f>& solvedRotations, std::vector<Vector3f>& targetPos); //orig points in OrigMesh, new deformed points in ModelPointer
 		Eigen::Matrix3f procrustes(const std::vector<Vector3f>& sourcePoints, const std::vector<Vector3f>& targetPoints, const std::vector<float>& weights);
 		
 		void computeSystemMatrix(SystemMatrix& mat);

@@ -29,13 +29,20 @@ void ARAP::ARAPSolver::ArapStep(int iterations)
 	std::vector<Matrix3f> rotations;
 	std::vector<Vector3f> pos;
 
-	for (int ii = 0; ii < iterations; ii++) {
+	//init pos with vertex pos from last frame 
+	for (int i = 0; i < ModelDataPointer->meshes[0].vertices.size();i++) { //TODO better init with strides!
+		glm::vec3 gvp = ModelDataPointer->meshes[0].vertices[i].Position;
+		Vector3f vp(gvp.x, gvp.y, gvp.z);
+		pos.push_back(vp);
+	}
 
-		solveRotations(rotations);
+	for (int ii = 0; ii < iterations; ii++) { //vertex iterations
+
+		solveRotations(rotations, pos);
 		solvePositions(constraints, rotations, pos);
 	}
 	
-	//TODO update pos of vertices in ModelPointer
+	//update pos of vertices in ModelPointer TODO find faster solution
 	for (int i = 0;i < pos.size();i++) {
 		Vector3f curPos = pos.at(i);
 		ModelDataPointer->meshes[0].vertices[i].Position = glm::vec3(curPos.x(), curPos.y(), curPos.z());
@@ -70,7 +77,7 @@ void ARAP::ARAPSolver::computeFanWeights(std::vector<float>& fanWeights)
 	}
 }
 
-void ARAP::ARAPSolver::solveRotations(std::vector<Matrix3f>& solvedRotations)
+void ARAP::ARAPSolver::solveRotations(std::vector<Matrix3f>& solvedRotations, std::vector<Vector3f>& targetPos)
 {
 	solvedRotations.clear();
 
@@ -93,9 +100,7 @@ void ARAP::ARAPSolver::solveRotations(std::vector<Matrix3f>& solvedRotations)
 			const OpenMesh::VertexHandle h(vv_it->idx());
 			sourcePointsFan.push_back(vector3f_from_point(OrigMesh->point(h)) - center);
 
-			glm::vec3 deformedGlm = ModelDataPointer->meshes[0].vertices[h.idx()].Position;
-			const Vector3f deformedEigen = Vector3f(deformCenterVec.x, deformCenterVec.y, deformCenterVec.z);
-			deformedPointsFan.push_back(deformedEigen - center_deformed);
+			deformedPointsFan.push_back(targetPos[h.idx()] - center_deformed);
 		}
 
 		Matrix3f rotation = procrustes(sourcePointsFan, deformedPointsFan, localWeights);
