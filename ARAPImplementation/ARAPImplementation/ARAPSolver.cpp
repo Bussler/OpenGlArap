@@ -22,6 +22,9 @@ ARAP::ARAPSolver::~ARAPSolver()
 //TODO get constraints
 void ARAP::ARAPSolver::ArapStep(int iterations)
 {
+	if (constraints.size() == 0)
+		return;
+
 	if (changedConstraints)
 		setSystemMatrixConstraints(constraints);
 	changedConstraints = false;

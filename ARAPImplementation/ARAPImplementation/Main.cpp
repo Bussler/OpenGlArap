@@ -97,7 +97,7 @@ int main() {
 	vertexDragging::setARAP(arapSolver.get());
 	
 	//TODO better solution
-	arapSolver->toggleConstraint(0);
+	//arapSolver->toggleConstraint(0);
 
 	//use model view projection matrices to transform vertices from local to screen (NDC) space. NDC -> ViewPort is done automatically by opengl
 	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //Caution: here we interchange y and z axis for this model!
