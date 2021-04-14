@@ -3,7 +3,7 @@
 
 
 
-ARAP::ARAPSolver::ARAPSolver(Model* parsedModel, TriMesh* origMesh)
+ARAP::ARAPSolver::ARAPSolver(Model* parsedModel, TriMesh& origMesh)
 {
 	ModelDataPointer = parsedModel;
 	this->OrigMesh = origMesh;
@@ -19,7 +19,7 @@ ARAP::ARAPSolver::~ARAPSolver()
 {
 }
 
-//TODO get constraints
+
 void ARAP::ARAPSolver::ArapStep(int iterations)
 {
 	if (constraints.size() == 0)
@@ -29,8 +29,8 @@ void ARAP::ARAPSolver::ArapStep(int iterations)
 		setSystemMatrixConstraints(constraints);
 	changedConstraints = false;
 
-	std::vector<Matrix3f> rotations;
-	std::vector<Vector3f> pos;
+	vector_Matrix3f rotations;
+	vector_Vector3f pos;
 
 	//init pos with vertex pos from last frame 
 	for (int i = 0; i < ModelDataPointer->meshes[0].vertices.size();i++) { //TODO better init with strides!
@@ -41,7 +41,7 @@ void ARAP::ARAPSolver::ArapStep(int iterations)
 
 	for (int ii = 0; ii < iterations; ii++) { //vertex iterations
 
-		solveRotations(rotations, pos);
+		solveRotations(OrigMesh, rotations, pos);
 		solvePositions(constraints, rotations, pos);
 	}
 	
@@ -69,39 +69,50 @@ void ARAP::ARAPSolver::untoggleConstraint(int i)
 	changedConstraints = true;
 }
 
+void ARAP::ARAPSolver::UpdateConstraint(int idx, glm::vec3 pos)
+{
+	for (int i = 0; i < constraints.size();i++) {
+		if (constraints.at(i).first == idx)
+			constraints.at(i).second = Vector3f(pos.x, pos.y, pos.z);
+	}
+	changedConstraints = true;
+}
+
 Vector3f ARAP::ARAPSolver::vector3f_from_point(const TriMesh::Point& p) {
+	changedConstraints = true;
 	return Vector3f(p[0], p[1], p[2]);
 }
 
 void ARAP::ARAPSolver::computeFanWeights(std::vector<float>& fanWeights)
 {
-	for (auto v_it = OrigMesh->vertices_begin(); v_it != OrigMesh->vertices_end(); ++v_it) {
+	for (auto v_it = OrigMesh.vertices_begin(); v_it != OrigMesh.vertices_end(); ++v_it) {
 		fanWeights.push_back(1.0f);//TODO compute Weights
 	}
 }
 
-void ARAP::ARAPSolver::solveRotations(std::vector<Matrix3f>& solvedRotations, std::vector<Vector3f>& targetPos)
+void ARAP::ARAPSolver::solveRotations(const TriMesh &mesh, vector_Matrix3f& solvedRotations, const vector_Vector3f& targetPos)
 {
 	solvedRotations.clear();
 
 	// Iterate over each and every vertex v, v is the center point of the regarded mesh fan
-	for (auto v_it = OrigMesh->vertices_begin(); v_it != OrigMesh->vertices_end(); ++v_it) {
+	for (auto v_it = mesh.vertices_begin(); v_it != mesh.vertices_end(); ++v_it) {
 		std::vector<float> localWeights;
-		std::vector<Vector3f> sourcePointsFan;
-		std::vector<Vector3f> deformedPointsFan;
+
+		vector_Vector3f sourcePointsFan;
+		vector_Vector3f deformedPointsFan;
 
 		//Better way to get from glm to eigen?
-		const Vector3f center = vector3f_from_point(OrigMesh->point(*v_it));
+		const Vector3f center = vector3f_from_point(mesh.point(*v_it));
 		glm::vec3 deformCenterVec = ModelDataPointer->meshes[0].vertices[v_it->idx()].Position;
 		const Vector3f center_deformed = Vector3f(deformCenterVec.x, deformCenterVec.y, deformCenterVec.z);
-		
-		// loop through fan
-		for (TriMesh::VertexVertexIter vv_it = OrigMesh->vv_iter(*v_it); vv_it.is_valid(); ++vv_it) {
+
+		// loop through fan 
+		for (TriMesh::VertexVertexIter vv_it = OrigMesh.vv_iter(*v_it); vv_it.is_valid(); ++vv_it) {
 			//fan_weights.push_back(weights.weights[ii].weight); //TODO Weights
 			localWeights.push_back(fanWeights[vv_it->idx()]);
 
 			const OpenMesh::VertexHandle h(vv_it->idx());
-			sourcePointsFan.push_back(vector3f_from_point(OrigMesh->point(h)) - center);
+			sourcePointsFan.push_back(vector3f_from_point(mesh.point(h)) - center);
 
 			deformedPointsFan.push_back(targetPos[h.idx()] - center_deformed);
 		}
@@ -112,7 +123,7 @@ void ARAP::ARAPSolver::solveRotations(std::vector<Matrix3f>& solvedRotations, st
 }
 
 //solves for rigid rotations with procrustes algotithm
-Eigen::Matrix3f ARAP::ARAPSolver::procrustes(const std::vector<Eigen::Vector3f>& sourcePoints, const std::vector<Eigen::Vector3f>& targetPoints, const std::vector<float>& weights)
+Eigen::Matrix3f ARAP::ARAPSolver::procrustes(const vector_Vector3f& sourcePoints, const vector_Vector3f& targetPoints, const std::vector<float>& weights)
 {
 	//setup
 	Matrix<float, Dynamic, 3> Source(sourcePoints.size(), 3);
@@ -136,16 +147,16 @@ void ARAP::ARAPSolver::computeSystemMatrix(ARAP::SystemMatrix& mat)
 {
 	SystemMatrix ret{};
 
-	const size_t vertexCount = OrigMesh->n_vertices();
+	const size_t vertexCount = OrigMesh.n_vertices();
 
 	SparseMatrix<float> L(vertexCount, vertexCount);
 	L.setZero();
 
-	for (auto v_it = OrigMesh->vertices_begin(); v_it != OrigMesh->vertices_end(); ++v_it) {
+	for (auto v_it = OrigMesh.vertices_begin(); v_it != OrigMesh.vertices_end(); ++v_it) {
 		const auto v_idx = v_it->idx();
 
 		// loop through fan
-		for (TriMesh::VertexVertexIter vv_it = OrigMesh->vv_iter(*v_it); vv_it.is_valid(); ++vv_it) { //TODO do we consider our starting vertex then too?
+		for (TriMesh::VertexVertexIter vv_it = OrigMesh.vv_iter(*v_it); vv_it.is_valid(); ++vv_it) { //TODO do we consider our starting vertex then too?
 			const float weight = fanWeights[vv_it->idx()];
 			const auto u_idx = vv_it->idx();
 
@@ -173,27 +184,27 @@ void ARAP::ARAPSolver::setSystemMatrixConstraints(const std::vector<std::pair<in
 	sysMatrix.solver.compute(L);
 }
 
-void ARAP::ARAPSolver::solvePositions(const std::vector<std::pair<int, Vector3f>>& constraints, const std::vector<Matrix3f>& rotations, std::vector<Vector3f>& solvedPos)
+void ARAP::ARAPSolver::solvePositions(const std::vector<std::pair<int, Vector3f>>& constraints, const vector_Matrix3f& rotations, vector_Vector3f& solvedPos)
 {
 	auto& L = sysMatrix.L;
 	auto& L_orig = sysMatrix.L_orig;
-	const size_t vertexCount = OrigMesh->n_vertices();
+	const size_t vertexCount = OrigMesh.n_vertices();
 
 	Matrix<float, Dynamic, 3> b(vertexCount, 3);
 	b.setZero();
 
 	//calc rhs b
-	for (auto v_it = OrigMesh->vertices_begin(); v_it != OrigMesh->vertices_end(); ++v_it) {
+	for (auto v_it = OrigMesh.vertices_begin(); v_it != OrigMesh.vertices_end(); ++v_it) {
 		const auto v_idx = v_it->idx();
 
 		// loop through fan
-		for (TriMesh::VertexVertexIter vv_it = OrigMesh->vv_iter(*v_it); vv_it.is_valid(); ++vv_it) {
+		for (TriMesh::VertexVertexIter vv_it = OrigMesh.vv_iter(*v_it); vv_it.is_valid(); ++vv_it) {
 			const float weight = fanWeights[vv_it->idx()];
 			const OpenMesh::VertexHandle u_handle(vv_it->idx());
 			const auto u_idx = vv_it->idx();
 
 			Matrix3f m_rot = rotations[v_idx] + rotations[u_idx];
-			Vector3f tmp = 0.5f * weight * m_rot * (vector3f_from_point(OrigMesh->point(*v_it)) - vector3f_from_point(OrigMesh->point(u_handle)));
+			Vector3f tmp = 0.5f * weight * m_rot * (vector3f_from_point(OrigMesh.point(*v_it)) - vector3f_from_point(OrigMesh.point(u_handle)));
 			b.row(v_idx) += tmp;
 		}
 	}
@@ -204,7 +215,7 @@ void ARAP::ARAPSolver::solvePositions(const std::vector<std::pair<int, Vector3f>
 		OpenMesh::VertexHandle h(idx);
 
 		// loop through fan
-		for (TriMesh::VertexVertexIter vv_it = OrigMesh->vv_iter(h); vv_it.is_valid(); ++vv_it) {
+		for (TriMesh::VertexVertexIter vv_it = OrigMesh.vv_iter(h); vv_it.is_valid(); ++vv_it) {
 			const float weight = -fanWeights[vv_it->idx()];
 			const auto u_idx = vv_it->idx();
 

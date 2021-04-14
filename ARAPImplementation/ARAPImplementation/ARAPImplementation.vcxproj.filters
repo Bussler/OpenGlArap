@@ -53,6 +53,9 @@
     <ClInclude Include="OpenMeshType.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="eigen_containers.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\Basic.shader">

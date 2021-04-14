@@ -93,7 +93,7 @@ int main() {
 	Model parsedModel(mesh);
 	vertexDragging::setModel(&parsedModel); //link model for dragging of vertices
 
-	arapSolver = std::make_unique<ARAP::ARAPSolver>(&parsedModel, &mesh);//construct arap interface
+	arapSolver = std::make_unique<ARAP::ARAPSolver>(&parsedModel, mesh);//construct arap interface
 	vertexDragging::setARAP(arapSolver.get());
 	
 	//TODO better solution

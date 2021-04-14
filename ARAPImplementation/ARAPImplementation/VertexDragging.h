@@ -147,6 +147,7 @@ namespace vertexDragging {
 
 			//update the model
 			ModelPointer->meshes[0].vertices[vertexIndex].Position = glm::vec3(reconstructedOrig.x, reconstructedOrig.y, reconstructedOrig.z);
+			ArapSolverPointer->UpdateConstraint(vertexIndex, glm::vec3(reconstructedOrig.x, reconstructedOrig.y, reconstructedOrig.z));
 			ModelPointer->meshes[0].UpdateMeshVertices();
 
 		}

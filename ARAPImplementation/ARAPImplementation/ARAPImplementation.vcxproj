@@ -26,6 +26,7 @@
   <ItemGroup>
     <ClInclude Include="ARAPSolver.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="eigen_containers.hpp" />
     <ClInclude Include="MeshLoader.h" />
     <ClInclude Include="MeshRendering.h" />
     <ClInclude Include="OpenMeshType.h" />
@@ -90,19 +91,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>D:\ExternLibs\eigen-3.3.7\eigen-3.3.7;D:\ExternLibs\OpenMesh-8.1\lib;D:\ExternLibs\assimp\assimp-4.1.0\lib\include;D:\ExternLibs\glm-0.9.9.8\glm;D:\ExternLibs\glad\include;D:\ExternLibs\glfw3.3.3Lib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\ExternLibs\OpenMesh-8.1\lib;D:\ExternLibs\assimp\assimp-4.1.0\lib\Release;D:\ExternLibs\glfw3.3.3Lib\lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\MyLibs\eigen-3.3.7\eigen-3.3.7;C:\MyLibs\OpenMesh-8.1\lib;C:\MyLibs\assimp-4.1.0\lib\include;C:\MyLibs\glm-0.9.9.8\glm;C:\MyLibs\glad\include;C:\MyLibs\glfw-3.3.3\lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\MyLibs\OpenMesh-8.1\lib;C:\MyLibs\assimp-4.1.0\lib;C:\MyLibs\glfw-3.3.3\lib\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\ExternLibs\eigen-3.3.7\eigen-3.3.7;D:\ExternLibs\OpenMesh-8.1\lib;D:\ExternLibs\assimp\assimp-4.1.0\lib\include;D:\ExternLibs\glm-0.9.9.8\glm;D:\ExternLibs\glad\include;D:\ExternLibs\glfw3.3.3Lib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\ExternLibs\OpenMesh-8.1\lib;D:\ExternLibs\assimp\assimp-4.1.0\lib\Release;D:\ExternLibs\glfw3.3.3Lib\lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>D:\ExternLibs\eigen-3.3.7\eigen-3.3.7;D:\ExternLibs\OpenMesh-8.1\lib;D:\ExternLibs\assimp\assimp-4.1.0\lib\include;D:\ExternLibs\glm-0.9.9.8\glm;D:\ExternLibs\glad\include;D:\ExternLibs\glfw3.3.3Lib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\ExternLibs\OpenMesh-8.1\lib;D:\ExternLibs\assimp\assimp-4.1.0\lib\Release;D:\ExternLibs\glfw3.3.3Lib\lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\MyLibs\eigen-3.3.7\eigen-3.3.7;C:\MyLibs\OpenMesh-8.1\lib;C:\MyLibs\assimp-4.1.0\lib\include;C:\MyLibs\glm-0.9.9.8\glm;C:\MyLibs\glad\include;C:\MyLibs\glfw-3.3.3\lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\MyLibs\OpenMesh-8.1\lib;C:\MyLibs\assimp-4.1.0\lib;C:\MyLibs\glfw-3.3.3\lib\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\ExternLibs\eigen-3.3.7\eigen-3.3.7;D:\ExternLibs\OpenMesh-8.1\lib;D:\ExternLibs\assimp\assimp-4.1.0\lib\include;D:\ExternLibs\glm-0.9.9.8\glm;D:\ExternLibs\glad\include;D:\ExternLibs\glfw3.3.3Lib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\ExternLibs\OpenMesh-8.1\lib;D:\ExternLibs\assimp\assimp-4.1.0\lib\Release;D:\ExternLibs\glfw3.3.3Lib\lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -116,6 +121,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>OpenMeshCore.lib;glfw3.lib;opengl32.lib;assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -130,7 +136,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>OpenMeshCored.lib;glfw3.lib;opengl32.lib;assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenMeshCore.lib;glfw3.lib;opengl32.lib;assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -149,6 +155,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>OpenMeshCore.lib;glfw3.lib;opengl32.lib;assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -167,7 +174,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>OpenMeshCored.lib;glfw3.lib;opengl32.lib;assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenMeshCore.lib;glfw3.lib;opengl32.lib;assimp-vc140-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
