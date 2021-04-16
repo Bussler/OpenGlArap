@@ -44,7 +44,26 @@ bool rotating = false;
 bool dragging = false;
 
 
-int main() {
+int main(int argc, char*argv[]) {
+
+	//handling unser input
+	if (argc > 3) {
+		std::cout << "Too many arguments!" << std::endl;
+		return 1;
+	}
+
+	//default values
+	std::string modelPath = "data/cactus.obj";
+	std::string shaderPath = "shaders/Color.shader";
+
+	//parsing of input
+	if(argc > 1) {
+		modelPath = argv[1];
+
+		if (argc > 2) {
+			shaderPath = argv[2];
+		}
+	}
 	
 	//set init gl version: 3.3, core
 	glfwInit();
@@ -77,7 +96,7 @@ int main() {
 	glEnable(GL_DEPTH_TEST); //activates depth test
 
 	//parse and create shaders
-	ShaderParser::ShaderProgramSource sSource = ShaderParser::parseShader("shaders/Color.shader"); //parse source code
+	ShaderParser::ShaderProgramSource sSource = ShaderParser::parseShader(shaderPath); //parse source code
 	const char *vSource = sSource.vertexSource.c_str();
 	const char *fSource = sSource.fragmentSource.c_str();
 	unsigned int shaderProgramBasic = ShaderParser::createShader(vSource, fSource); //create vertex, fragment shaders and link together to program
@@ -85,7 +104,7 @@ int main() {
 	//Model parsedModel("data/cactus.obj"); //model to render
 	//vertexDragging::setModel(&parsedModel); //link model for dragging of vertices
 	TriMesh mesh;
-	if (!OpenMesh::IO::read_mesh(mesh, "data/cactus.obj"))
+	if (!OpenMesh::IO::read_mesh(mesh, modelPath))
 	{
 		std::cerr << "read mesh error\n";
 		exit(1);
