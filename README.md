@@ -14,10 +14,12 @@ The ARAP modelling algorithm is an iterative scheme which preserves local mesh s
 - GLFW
 
 ## How to use
-After linking the dependencies and compiling the program is used with the following 2 arguments: Enclosed arguments indicate to choose one:
+After linking the dependencies and compiling the program is used with the following 2 arguments:
+
 `./ARAPImplementation filenameModel filenameShader`
 
 The program can also be executed without arguments, in which case it loads the default cactus model and shader.
+
 `./ARAPImplementation`
 
 ### Controls
