@@ -43,6 +43,8 @@ double lastYMPos;
 bool rotating = false;
 bool dragging = false;
 
+bool usingCamera = false;
+
 
 int main(int argc, char*argv[]) {
 
@@ -142,7 +144,8 @@ int main(int argc, char*argv[]) {
 		glClear(GL_COLOR_BUFFER_BIT); //state setting, clear buffer. Also available: GL_COLOR_BUFFER_BIT; GL_DEPTH_BUFFER_BIT; GL_STENCIL_BUFFER_BIT
 
 		//for camera: update view matrix from camera
-		//view = camera.getViewMatrix();
+		if(usingCamera)
+			view = camera.getViewMatrix();
 
 		//ARAP
 		arapSolver->ArapStep(3);
@@ -173,6 +176,10 @@ void processInput(GLFWwindow *window)
 		camera.processKeyBoardCamera(LEFT, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		camera.processKeyBoardCamera(RIGHT, deltaTime);
+
+	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+		usingCamera = !usingCamera;
+		
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
