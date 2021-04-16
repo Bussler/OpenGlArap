@@ -11,7 +11,6 @@ ARAP::ARAPSolver::ARAPSolver(Model* parsedModel, TriMesh& origMesh)
 	edgeWeights = computeFanWeights(); //construct weights
 
 	computeSystemMatrix(sysMatrix); //construct initial system Matrix
-
 }
 
 
@@ -124,7 +123,6 @@ ARAP::FanWeights ARAP::ARAPSolver::computeFanWeights()
 			all_weights.weights.push_back(fw);
 		}
 
-		//fanWeights.push_back(1.0f);//TODO compute Weights
 	}
 
 	all_weights.offsets.push_back(all_weights.weights.size()); // end marker
@@ -235,8 +233,6 @@ void ARAP::ARAPSolver::setSystemMatrixConstraints(const std::vector<std::pair<in
 
 void ARAP::ARAPSolver::solvePositions(const std::vector<std::pair<int, Vector3f>>& constraints, const vector_Matrix3f& rotations, vector_Vector3f& solvedPos)
 {
-	auto& L = sysMatrix.L;
-	auto& L_orig = sysMatrix.L_orig;
 	const size_t vertexCount = OrigMesh.n_vertices();
 
 	Matrix<float, Dynamic, 3> b(vertexCount, 3);
