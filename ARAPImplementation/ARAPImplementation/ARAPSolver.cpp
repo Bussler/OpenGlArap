@@ -8,7 +8,7 @@ ARAP::ARAPSolver::ARAPSolver(Model* parsedModel, TriMesh& origMesh)
 	ModelDataPointer = parsedModel;
 	this->OrigMesh = origMesh;
 
-	computeFanWeights(fanWeights); //construct weights
+	edgeWeights = computeFanWeights(); //construct weights
 
 	computeSystemMatrix(sysMatrix); //construct initial system Matrix
 
@@ -83,11 +83,53 @@ Vector3f ARAP::ARAPSolver::vector3f_from_point(const TriMesh::Point& p) {
 	return Vector3f(p[0], p[1], p[2]);
 }
 
-void ARAP::ARAPSolver::computeFanWeights(std::vector<float>& fanWeights)
+float ARAP::ARAPSolver::compute_weight(TriMesh::Point v, TriMesh::Point u, TriMesh::Point other) {
+	Vector3f vec1 = (vector3f_from_point(u) - vector3f_from_point(other)).normalized();
+	Vector3f vec2 = (vector3f_from_point(v) - vector3f_from_point(other)).normalized();
+	double angle = acos(vec1.dot(vec2));
+	return 1 / tan(angle);
+}
+
+ARAP::FanWeights ARAP::ARAPSolver::computeFanWeights()
 {
+	FanWeights all_weights;
+
 	for (auto v_it = OrigMesh.vertices_begin(); v_it != OrigMesh.vertices_end(); ++v_it) {
-		fanWeights.push_back(1.0f);//TODO compute Weights
+		all_weights.offsets.push_back(all_weights.weights.size()); // mark offset for this vertex
+
+		for (TriMesh::VertexOHalfedgeIter voh_it = OrigMesh.cvoh_iter(*v_it); voh_it.is_valid(); ++voh_it) {
+			float weight = 0;
+			TriMesh::VertexHandle u = voh_it->to();
+			TriMesh::HalfedgeHandle oheh(OrigMesh.opposite_halfedge_handle(*voh_it));
+
+			if (!OrigMesh.is_boundary(*voh_it)) {
+				TriMesh::HalfedgeHandle nxt_heh = OrigMesh.next_halfedge_handle(*voh_it);
+				TriMesh::VertexHandle other = OrigMesh.to_vertex_handle(nxt_heh);
+				weight += compute_weight(OrigMesh.point(*v_it), OrigMesh.point(u), OrigMesh.point(other));
+			}
+			if (!OrigMesh.is_boundary(oheh)) {
+				TriMesh::HalfedgeHandle prv_heh = OrigMesh.prev_halfedge_handle(oheh);
+				TriMesh::VertexHandle other = OrigMesh.from_vertex_handle(prv_heh);
+				weight += compute_weight(OrigMesh.point(*v_it), OrigMesh.point(u), OrigMesh.point(other));
+			}
+			if (!OrigMesh.is_boundary(*voh_it) && !OrigMesh.is_boundary(oheh)) {
+				weight /= 2;
+			}
+
+			//weight = 1.f / (mesh.point(*v_it) - mesh.point(u)).norm();
+			if (weight < 0)
+				weight = 0;
+
+			FanWeight fw{ u, weight };
+			all_weights.weights.push_back(fw);
+		}
+
+		//fanWeights.push_back(1.0f);//TODO compute Weights
 	}
+
+	all_weights.offsets.push_back(all_weights.weights.size()); // end marker
+
+	return all_weights;
 }
 
 void ARAP::ARAPSolver::solveRotations(const TriMesh &mesh, vector_Matrix3f& solvedRotations, const vector_Vector3f& targetPos)
@@ -106,12 +148,15 @@ void ARAP::ARAPSolver::solveRotations(const TriMesh &mesh, vector_Matrix3f& solv
 		glm::vec3 deformCenterVec = ModelDataPointer->meshes[0].vertices[v_it->idx()].Position;
 		const Vector3f center_deformed = Vector3f(deformCenterVec.x, deformCenterVec.y, deformCenterVec.z);
 
-		// loop through fan 
-		for (TriMesh::VertexVertexIter vv_it = OrigMesh.vv_iter(*v_it); vv_it.is_valid(); ++vv_it) {
-			//fan_weights.push_back(weights.weights[ii].weight); //TODO Weights
-			localWeights.push_back(fanWeights[vv_it->idx()]);
+		const size_t weight_idx_start = edgeWeights.offsets[v_it->idx()];
+		const size_t weight_idx_end = edgeWeights.offsets[v_it->idx() + 1];
 
-			const OpenMesh::VertexHandle h(vv_it->idx());
+		// loop through fan 
+		for (size_t ii = weight_idx_start; ii < weight_idx_end; ii++) {
+			//fan_weights.push_back(weights.weights[ii].weight); //TODO Weights
+			localWeights.push_back(edgeWeights.weights[ii].weight);
+
+			const OpenMesh::VertexHandle h= edgeWeights.weights[ii].vertex;
 			sourcePointsFan.push_back(vector3f_from_point(mesh.point(h)) - center);
 
 			deformedPointsFan.push_back(targetPos[h.idx()] - center_deformed);
@@ -155,10 +200,14 @@ void ARAP::ARAPSolver::computeSystemMatrix(ARAP::SystemMatrix& mat)
 	for (auto v_it = OrigMesh.vertices_begin(); v_it != OrigMesh.vertices_end(); ++v_it) {
 		const auto v_idx = v_it->idx();
 
+		const size_t weight_idx_start = edgeWeights.offsets[v_it->idx()];
+		const size_t weight_idx_end = edgeWeights.offsets[v_it->idx() + 1];
+
 		// loop through fan
-		for (TriMesh::VertexVertexIter vv_it = OrigMesh.vv_iter(*v_it); vv_it.is_valid(); ++vv_it) { //TODO do we consider our starting vertex then too?
-			const float weight = fanWeights[vv_it->idx()];
-			const auto u_idx = vv_it->idx();
+		for (size_t jj = weight_idx_start; jj < weight_idx_end; jj++) {
+			const float weight = edgeWeights.weights[jj].weight;
+			const auto u_handle = edgeWeights.weights[jj].vertex;
+			const auto u_idx = u_handle.idx();
 
 			L.coeffRef(v_idx, v_idx) += weight;
 			L.coeffRef(v_idx, u_idx) -= weight;
@@ -197,11 +246,14 @@ void ARAP::ARAPSolver::solvePositions(const std::vector<std::pair<int, Vector3f>
 	for (auto v_it = OrigMesh.vertices_begin(); v_it != OrigMesh.vertices_end(); ++v_it) {
 		const auto v_idx = v_it->idx();
 
+		const size_t weight_idx_start = edgeWeights.offsets[v_it->idx()];
+		const size_t weight_idx_end = edgeWeights.offsets[v_it->idx() + 1];
+
 		// loop through fan
-		for (TriMesh::VertexVertexIter vv_it = OrigMesh.vv_iter(*v_it); vv_it.is_valid(); ++vv_it) {
-			const float weight = fanWeights[vv_it->idx()];
-			const OpenMesh::VertexHandle u_handle(vv_it->idx());
-			const auto u_idx = vv_it->idx();
+		for (size_t jj = weight_idx_start; jj < weight_idx_end; jj++) {
+			const float weight = edgeWeights.weights[jj].weight;
+			const auto u_handle = edgeWeights.weights[jj].vertex;
+			const auto u_idx = u_handle.idx();
 
 			Matrix3f m_rot = rotations[v_idx] + rotations[u_idx];
 			Vector3f tmp = 0.5f * weight * m_rot * (vector3f_from_point(OrigMesh.point(*v_it)) - vector3f_from_point(OrigMesh.point(u_handle)));
@@ -212,12 +264,15 @@ void ARAP::ARAPSolver::solvePositions(const std::vector<std::pair<int, Vector3f>
 	//apply constraints to system
 	for (const auto& con : constraints) {
 		const auto idx = con.first;
-		OpenMesh::VertexHandle h(idx);
+		
+		const size_t weight_idx_start = edgeWeights.offsets[idx];
+		const size_t weight_idx_end = edgeWeights.offsets[idx + 1];
 
 		// loop through fan
-		for (TriMesh::VertexVertexIter vv_it = OrigMesh.vv_iter(h); vv_it.is_valid(); ++vv_it) {
-			const float weight = -fanWeights[vv_it->idx()];
-			const auto u_idx = vv_it->idx();
+		for (size_t jj = weight_idx_start; jj < weight_idx_end; jj++) {
+			const float weight = -edgeWeights.weights[jj].weight;
+			const auto u_handle = edgeWeights.weights[jj].vertex;
+			const auto u_idx = u_handle.idx();
 
 			b.row(u_idx) -= weight * con.second;
 		}

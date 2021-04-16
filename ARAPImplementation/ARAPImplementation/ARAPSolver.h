@@ -19,6 +19,21 @@ namespace ARAP {
 		Eigen::SimplicialLLT<Eigen::SparseMatrix<float>> solver; // solver, stores a reference to L.
 	};
 
+	struct FanWeight {
+		OpenMesh::VertexHandle vertex; // The vertex index of the vertex in the Mesh.
+		float weight; // The corresponding weight.
+	};
+
+	struct FanWeights {
+		// maps from 'vertex index in mesh' to index into 'weights'.
+		// (The number of neighbors is implicitly given by 'offsets[idx+1] - offsets[idx]')
+		std::vector<size_t> offsets;
+
+		// The edge weights.
+		// If a vertex has multiple neighbors, they are stored consecutively.
+		std::vector<FanWeight> weights;
+	};
+
 	class ARAPSolver
 	{
 	public:
@@ -42,11 +57,11 @@ namespace ARAP {
 
 		std::vector<std::pair<int, Vector3f>> constraints; //constraint list
 		bool changedConstraints = false;
-		//TODO calculate weights of mesh
-		std::vector<float> fanWeights;
+		FanWeights edgeWeights; // calculate weights of mesh
 
 		Vector3f vector3f_from_point(const TriMesh::Point& p);
-		void computeFanWeights(std::vector<float>& fanWeights);
+		float compute_weight(TriMesh::Point v, TriMesh::Point u, TriMesh::Point other);
+		FanWeights computeFanWeights();
 		void solveRotations(const TriMesh &mesh, vector_Matrix3f& solvedRotations, const vector_Vector3f& targetPos); //orig points in OrigMesh, new deformed points in ModelPointer
 		Eigen::Matrix3f procrustes(const vector_Vector3f& sourcePoints, const vector_Vector3f& targetPoints, const std::vector<float>& weights);
 		
