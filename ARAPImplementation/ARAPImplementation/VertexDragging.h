@@ -57,10 +57,10 @@ namespace vertexDragging {
 
 				if (searchPos != selectedConstraints.end()) { //constraint already selected -> put static
 					glm::vec3 curColor = ModelPointer->meshes[0].vertices[i].Color;
-					if (curColor == dynamicConstraintColor) { //dynamic
-						ModelPointer->meshes[0].vertices[i].Color = staticConstraintColor; //static color
+					if (curColor == staticConstraintColor) { //clicked a prev static vertex
+						ModelPointer->meshes[0].vertices[i].Color = dynamicConstraintColor; //set dynamic and draggable
 					}
-					else { //static 
+					else { //clicked a dynamic vertex
 						ModelPointer->meshes[0].vertices[i].Color = origColor; //orig color
 
 						selectedConstraints.erase(searchPos);
@@ -70,7 +70,7 @@ namespace vertexDragging {
 					
 				}
 				else { //select
-					ModelPointer->meshes[0].vertices[i].Color = dynamicConstraintColor;
+					ModelPointer->meshes[0].vertices[i].Color = staticConstraintColor;
 					selectedConstraints.push_back(i);
 					selectedConstraintsData.push_back(DragVertexData{ X, Y, pos.z }); //TODO how to update x, y, z when rotating the screen?
 					ArapSolverPointer->toggleConstraint(i);
@@ -78,11 +78,6 @@ namespace vertexDragging {
 
 				ModelPointer->meshes[0].UpdateMeshVertices();
 
-				/*std::cout << "Vertex Pos orig: " << vertPos.x << " : " << vertPos.y << " : " << vertPos.z << std::endl;
-				std::cout << "Vertex Pos NDC: " << pos.x << " : " << pos.y << " : " << pos.z << std::endl;
-				std::cout << "Vertex Pos SCREEN: " << X << " : " << Y << " : " << Z << std::endl;*/
-
-				//break; //get all vertices on the edge, not only the first one! -> vertex counts not for multiple faces!!!
 			}
 
 		}
