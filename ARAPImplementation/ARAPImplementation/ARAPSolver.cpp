@@ -44,8 +44,8 @@ void ARAP::ARAPSolver::ArapStep(int iterations)
 		solvePositions(constraints, rotations, pos);
 	}
 	
-	//update pos of vertices in ModelPointer TODO find faster solution
-	for (int i = 0;i < pos.size();i++) {
+	//update pos of vertices in ModelPointer
+	for (int i = 0;i < pos.size();i++) { //TODO find faster solution
 		Vector3f curPos = pos.at(i);
 		ModelDataPointer->meshes[0].vertices[i].Position = glm::vec3(curPos.x(), curPos.y(), curPos.z());
 	}
@@ -119,6 +119,7 @@ ARAP::FanWeights ARAP::ARAPSolver::computeFanWeights()
 			if (weight < 0)
 				weight = 0;
 
+			
 			FanWeight fw{ u, weight };
 			all_weights.weights.push_back(fw);
 		}
