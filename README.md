@@ -18,7 +18,7 @@ After linking the dependencies and compiling the program is used with the follow
 
 `./ARAPImplementation filenameModel filenameShader`
 
-The program can also be executed without arguments, in which case it loads the default cactus model and shader.
+The program can also be executed without arguments, in which case it loads the default cactus model and shader in data/cactus.obj and shaders/Basic.shader.
 
 `./ARAPImplementation`
 
