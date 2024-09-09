@@ -1,6 +1,6 @@
 # OpenGlArap
 
-[**Project**](https://bussler.github.io/openglarap/)
+[**Project**](https://bussler.github.io/arap/)
 
 Implementation of the As-Rigid-As-Possible Surface Modeling (ARAP) algorithm by Sorkine and Alexa with OpenGL.
 ARAP is an algorithm for mesh deformations in a 3-dimensional environment.
